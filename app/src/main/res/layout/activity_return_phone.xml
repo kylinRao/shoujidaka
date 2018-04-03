@@ -8,11 +8,11 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.rao.shoujidaka.rentPhoneActivity">
+    tools:context="com.rao.returnphone.ReturnActivity">
 
     <!-- Login progress -->
     <ProgressBar
-        android:id="@+id/rent_progress"
+        android:id="@+id/login_progress"
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -20,12 +20,12 @@
         android:visibility="gone" />
 
     <ScrollView
-        android:id="@+id/rent_form"
+        android:id="@+id/login_form"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/phone_name_rent_form"
+            android:id="@+id/email_login_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -35,10 +35,10 @@
                 android:layout_height="wrap_content">
 
                 <AutoCompleteTextView
-                    android:id="@+id/renter_phone"
+                    android:id="@+id/returner_phone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/prompt_tenter_phone"
+                    android:hint="@string/returner_phone"
                     android:inputType="textPhonetic"
                     android:maxLines="1"
                     android:singleLine="true" />
@@ -50,10 +50,10 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:id="@+id/renter_password"
+                    android:id="@+id/password"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/prompt_renter_password"
+                    android:hint="@string/returner_name"
                     android:imeActionId="@+id/login"
                     android:imeActionLabel="@string/action_sign_in_short"
                     android:imeOptions="actionUnspecified"
@@ -64,12 +64,12 @@
             </android.support.design.widget.TextInputLayout>
 
             <Button
-                android:id="@+id/rent_phone_button"
+                android:id="@+id/email_sign_in_button"
                 style="?android:textAppearanceSmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="@string/rent"
+                android:text="@string/return_phone"
                 android:textStyle="bold" />
 
         </LinearLayout>

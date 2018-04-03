@@ -1,4 +1,4 @@
-package com.rao.shoujidaka;
+package com.rao.returnphone;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -30,11 +30,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.rao.returnphone.ReturnActivity;
+import com.rao.shoujidaka.R;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -47,7 +43,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 /**
  * A login screen that offers login via email/password.
  */
-public class rentPhoneActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -71,21 +67,16 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
     private EditText mNameView;
     private View mProgressView;
     private View mLoginFormView;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_rent_phone);
+        setContentView(R.layout.activity_return_phone);
         // Set up the login form.
-        mPhoneView = (AutoCompleteTextView) findViewById(R.id.renter_phone);
+        mPhoneView = (AutoCompleteTextView) findViewById(R.id.returner_phone);
         populateAutoComplete();
 
-        mNameView = (EditText) findViewById(R.id.renter_password);
+        mNameView = (EditText) findViewById(R.id.password);
         mNameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -97,26 +88,18 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             }
         });
 
-        Button rentPhoneRportButton = (Button) findViewById(R.id.rent_phone_button);
-        rentPhoneRportButton.setOnClickListener(new OnClickListener() {
+        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 attemptLogin();
-                Intent i = new Intent(rentPhoneActivity.this , ReturnActivity.class);
+                Intent i = new Intent(ReturnActivity.this , com.rao.shoujidaka.rentPhoneActivity.class);
                 startActivity(i);
-
-
-
-
-
             }
         });
 
-        mLoginFormView = findViewById(R.id.rent_form);
-        mProgressView = findViewById(R.id.rent_progress);
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+        mLoginFormView = findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.login_progress);
     }
 
     private void populateAutoComplete() {
@@ -136,7 +119,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
         }
         if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
             Snackbar.make(mPhoneView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(android.R.string.ok, new OnClickListener() {
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
                         @Override
                         @TargetApi(Build.VERSION_CODES.M)
                         public void onClick(View v) {
@@ -168,7 +151,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    private void attemptLogin()  {
+    private void attemptLogin() {
         if (mAuthTask != null) {
             return;
         }
@@ -179,28 +162,30 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
         // Store values at the time of the login attempt.
         String phone = mPhoneView.getText().toString();
+        String name = mNameView.getText().toString();
+
         TelephonyManager tm = (TelephonyManager) this.getSystemService(TELEPHONY_SERVICE);
         String deviceId = tm.getDeviceId();
         String phoneType = android.os.Build.MODEL;
 
-        String name = mNameView.getText().toString();
-
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid name, if the user entered one.
+        // Check for a valid password, if the user entered one.
         if (!TextUtils.isEmpty(name) && !isNameValid(name)) {
             mNameView.setError(getString(R.string.error_invalid_password));
             focusView = mNameView;
             cancel = true;
         }
 
-        // Check for a valid phone address.
-        if (TextUtils.isEmpty(phone)) {
-            mPhoneView.setError(getString(R.string.error_field_required));
-            focusView = mPhoneView;
-            cancel = true;
-        } else if (!isPhoneValid(phone)) {
+        // Check for a valid email address.
+//        if (TextUtils.isEmpty(email)) {
+//            mPhoneView.setError(getString(R.string.error_field_required));
+//            focusView = mPhoneView;
+//            cancel = true;
+//        } else
+
+        if (!isPhoneValid(phone)) {
             mPhoneView.setError(getString(R.string.error_invalid_email));
             focusView = mPhoneView;
             cancel = true;
@@ -214,15 +199,18 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(phone, name, deviceId,phoneType);
+            mAuthTask = new UserLoginTask(phone, name,deviceId,phoneType);
             mAuthTask.execute((Void) null);
         }
     }
 
-    private boolean isPhoneValid(String email) {
+
+    private boolean isPhoneValid(String phone) {
         //TODO: Replace this with your own logic
-        return email.contains("1");
+//        return phone.contains("@");
+        return true;
     }
+
 
     private boolean isNameValid(String name) {
         //TODO: Replace this with your own logic
@@ -302,46 +290,10 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(rentPhoneActivity.this,
+                new ArrayAdapter<>(ReturnActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mPhoneView.setAdapter(adapter);
-    }
-
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("rentPhone Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
     }
 
 
@@ -361,11 +313,10 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String mPhone;
-        private final String mName;
-        private final String mdeviceId;
-        private final String mphoneType;
-
+        private  String mPhone;
+        private  String mName;
+        private  String mdeviceId;
+        private  String mphoneType;
 
 
         UserLoginTask(String phone, String name,String deviceId,String phoneType)  {
@@ -384,7 +335,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             new Thread() {
                 public void run() {
                     try {
-                        String data = "method=rent"+"&phone=" + URLEncoder.encode(mPhone, "utf-8") + "&name=" + URLEncoder.encode(mName, "utf-8")+"&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")
+                        String data = "method=return"+"&phone=" + URLEncoder.encode(mPhone, "utf-8") + "&name=" + URLEncoder.encode(mName, "utf-8")+"&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")
                                 +"&phoneType="+URLEncoder.encode(mphoneType, "utf-8");
                         URL url = new URL(path);
                         HttpURLConnection conn = (HttpURLConnection) url
