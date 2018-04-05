@@ -9,10 +9,12 @@ import android.content.Intent;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -29,12 +31,14 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.rao.returnphone.ReturnActivity;
+import com.rao.util.commonTools;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -76,16 +80,39 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
+    private MySQLDatabase database ;
+    private SQLiteDatabase sqlDatabase ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        初始化apk
+        commonTools.initApk(getApplicationContext());
+        //实例化刚才上面我们创建的那个类
+
+/*在通过getReadableDatabase()方法
+    或者通过getWritableDatabase()
+获得SQLDatabse类的对象；通过SQLDatabase类的对象来对数据进行操作；*/
+        database = new MySQLDatabase(rentPhoneActivity.this);
+        sqlDatabase =  database.getReadableDatabase();
+
+
+
+
+
+
+
+
+
+
+
+
         setContentView(R.layout.activity_rent_phone);
         // Set up the login form.
         mPhoneView = (AutoCompleteTextView) findViewById(R.id.renter_phone);
         populateAutoComplete();
 
-        mNameView = (EditText) findViewById(R.id.renter_password);
+        mNameView = (EditText) findViewById(R.id.renter_name);
         mNameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -102,8 +129,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             @Override
             public void onClick(View view) {
                 attemptLogin();
-                Intent i = new Intent(rentPhoneActivity.this , ReturnActivity.class);
-                startActivity(i);
+
 
 
 
@@ -189,8 +215,12 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
         View focusView = null;
 
         // Check for a valid name, if the user entered one.
-        if (!TextUtils.isEmpty(name) && !isNameValid(name)) {
-            mNameView.setError(getString(R.string.error_invalid_password));
+        if (TextUtils.isEmpty(name) ) {
+            mNameView.setError(getString(R.string.error_field_required));
+            focusView = mNameView;
+            cancel = true;
+        } else if(!isNameValid(name)){
+            mNameView.setError(getString(R.string.error_invalid_name));
             focusView = mNameView;
             cancel = true;
         }
@@ -201,7 +231,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             focusView = mPhoneView;
             cancel = true;
         } else if (!isPhoneValid(phone)) {
-            mPhoneView.setError(getString(R.string.error_invalid_email));
+            mPhoneView.setError(getString(R.string.error_invalid_phone));
             focusView = mPhoneView;
             cancel = true;
         }
@@ -216,12 +246,14 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             showProgress(true);
             mAuthTask = new UserLoginTask(phone, name, deviceId,phoneType);
             mAuthTask.execute((Void) null);
+
+
         }
     }
 
-    private boolean isPhoneValid(String email) {
+    private boolean isPhoneValid(String phone) {
         //TODO: Replace this with your own logic
-        return email.contains("1");
+        return phone.contains("1");
     }
 
     private boolean isNameValid(String name) {
@@ -332,6 +364,12 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client.connect();
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
+
+        if(MySQLDatabase.isPhoneRented(sqlDatabase)){
+            Intent i = new Intent(rentPhoneActivity.this , ReturnActivity.class);
+            startActivity(i);
+
+        }
     }
 
     @Override
@@ -347,8 +385,11 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
     private interface ProfileQuery {
         String[] PROJECTION = {
-                ContactsContract.CommonDataKinds.Email.ADDRESS,
-                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
+//                ContactsContract.CommonDataKinds.Email.ADDRESS,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+//                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
+                ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+
         };
 
         int ADDRESS = 0;
@@ -379,13 +420,24 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
             Log.d("rentPhoneReport", "get deviceId " + mdeviceId);
             Log.d("rentPhoneReport", "get mphoneType " + mphoneType);
 
-            final String path = "http://192.168.1.105:8888/rentPhoneReport";
+            final String path = commonTools.rentServerApiUrl;
             Log.d("rentPhoneReport", "getUrl " + path);
             new Thread() {
                 public void run() {
+                    Looper.prepare();
+
+
                     try {
-                        String data = "method=rent"+"&phone=" + URLEncoder.encode(mPhone, "utf-8") + "&name=" + URLEncoder.encode(mName, "utf-8")+"&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")
-                                +"&phoneType="+URLEncoder.encode(mphoneType, "utf-8");
+
+
+                        String data = "method=rent"+
+                                "&phone=" + URLEncoder.encode(mPhone, "utf-8") +
+                                "&name=" + URLEncoder.encode(mName, "utf-8")+
+                                "&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")+
+                                "&phoneType="+URLEncoder.encode(mphoneType, "utf-8")+
+                                "&gameboxVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.gamebox").get("versionName")+
+                                "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarket").get("versionName")+
+                                "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName");
                         URL url = new URL(path);
                         HttpURLConnection conn = (HttpURLConnection) url
                                 .openConnection();
@@ -398,8 +450,17 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
                         int code = conn.getResponseCode();
                         if (code == 200) {
+//                            页面跳转和数据库加载都依赖服务器返回正常
+                            sqlDatabase.execSQL(String.format("insert into wx_user (rentPhone,rentName,status) values ('%s','%s',%s)",mPhone,mName,1));
+                            MySQLDatabase.getPhoneData(sqlDatabase);
+                            Toast.makeText(getApplicationContext(),getString(R.string.rent_phone_successfule),Toast.LENGTH_SHORT).show();
 
-                            Log.d("rentPhoneReport", "OK ");
+                            Intent i = new Intent(rentPhoneActivity.this , ReturnActivity.class);
+                            startActivity(i);
+                            Log.d("rentPhoneReport", "body is:"+data);
+
+                            Log.d("rentPhoneReport", "手机已经成功借出");
+
 
                         } else {
                             Log.d("rentPhoneReport", "error ");
@@ -410,6 +471,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
                         e.printStackTrace();
 
                     }
+                    Looper.loop();
                 }
             }.start();
 

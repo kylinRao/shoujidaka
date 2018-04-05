@@ -3,11 +3,11 @@
 
     <!-- Strings related to login -->
     <string name="prompt_tenter_phone">手机号</string>
-    <string name="prompt_renter_password">姓名</string>
+    <string name="prompt_renter_name">姓名</string>
     <string name="rent">借手机</string>
     <string name="action_sign_in_short">Sign in</string>
-    <string name="error_invalid_email">This email address is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_invalid_phone">手机号不要乱写</string>
+    <string name="error_invalid_name">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
@@ -16,7 +16,10 @@
     <string name="title_activity_return">手机出借登记</string>
 
     <!-- Strings related to login -->
-    <string name="returner_phone">手机号（还手机时可以选填）</string>
-    <string name="returner_name">姓名</string>
+    <string name="returner_phone">手机号(如非本人，请先替他还手机，然后将手机登记在阁下名下）</string>
+    <string name="returner_name">姓名（当前手机已被如下用户借走，处于待归还状态）</string>
     <string name="return_phone">还手机</string>
+    <string name="return_phone_successfule">手机归还登记成功，请把手机归还入库</string>
+    <string name="rent_phone_successfule">手机正常借出，阁下可以使用了</string>
+    <string name="rent_server_uri">http://lfhigametest.hwcloudtest.cn:38443/rentPhoneReport</string>
 </resources>

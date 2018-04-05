@@ -9,10 +9,12 @@ import android.content.Intent;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -29,14 +31,19 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.rao.shoujidaka.MySQLDatabase;
 import com.rao.shoujidaka.R;
+import com.rao.util.commonTools;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -67,16 +74,34 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
     private EditText mNameView;
     private View mProgressView;
     private View mLoginFormView;
+    private MySQLDatabase database ;
+    private SQLiteDatabase sqlDatabase ;
+    private Map renterMsgMap =new HashMap();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        初始化数据库引用
+        database = new MySQLDatabase(ReturnActivity.this);
+        sqlDatabase =  database.getReadableDatabase();
+
         setContentView(R.layout.activity_return_phone);
         // Set up the login form.
+        renterMsgMap = MySQLDatabase.getPhoneRenter(sqlDatabase);
         mPhoneView = (AutoCompleteTextView) findViewById(R.id.returner_phone);
+
+
+
         populateAutoComplete();
 
-        mNameView = (EditText) findViewById(R.id.password);
+        mNameView = (EditText) findViewById(R.id.returner_name);
+
+        if (!renterMsgMap.isEmpty()){
+            mPhoneView.setText(renterMsgMap.get("rentPhone").toString());
+            mNameView.setText(renterMsgMap.get("rentName").toString());
+
+        }
+
         mNameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -93,8 +118,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
             @Override
             public void onClick(View view) {
                 attemptLogin();
-                Intent i = new Intent(ReturnActivity.this , com.rao.shoujidaka.rentPhoneActivity.class);
-                startActivity(i);
+
             }
         });
 
@@ -173,7 +197,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
 
         // Check for a valid password, if the user entered one.
         if (!TextUtils.isEmpty(name) && !isNameValid(name)) {
-            mNameView.setError(getString(R.string.error_invalid_password));
+            mNameView.setError(getString(R.string.error_invalid_name));
             focusView = mNameView;
             cancel = true;
         }
@@ -186,7 +210,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
 //        } else
 
         if (!isPhoneValid(phone)) {
-            mPhoneView.setError(getString(R.string.error_invalid_email));
+            mPhoneView.setError(getString(R.string.error_invalid_phone));
             focusView = mPhoneView;
             cancel = true;
         }
@@ -201,6 +225,9 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
             showProgress(true);
             mAuthTask = new UserLoginTask(phone, name,deviceId,phoneType);
             mAuthTask.execute((Void) null);
+
+
+
         }
     }
 
@@ -330,13 +357,20 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
             Log.d("rentPhoneReport", "get deviceId " + mdeviceId);
             Log.d("rentPhoneReport", "get mphoneType " + mphoneType);
 
-            final String path = "http://192.168.1.105:8888/rentPhoneReport";
+            final String path = commonTools.rentServerApiUrl;
             Log.d("rentPhoneReport", "getUrl " + path);
             new Thread() {
                 public void run() {
+                    Looper.prepare();
                     try {
-                        String data = "method=return"+"&phone=" + URLEncoder.encode(mPhone, "utf-8") + "&name=" + URLEncoder.encode(mName, "utf-8")+"&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")
-                                +"&phoneType="+URLEncoder.encode(mphoneType, "utf-8");
+                        String data = "method=return"+
+                                "&phone=" + URLEncoder.encode(mPhone, "utf-8") +
+                                "&name=" + URLEncoder.encode(mName, "utf-8")+
+                                "&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")+
+                                "&phoneType="+URLEncoder.encode(mphoneType, "utf-8")+
+                                "&gameboxVersion="+ commonTools.getItems(getApplicationContext(),"com.huawei.gamebox").get("versionName")+
+                                "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarketp").get("versionName")+
+                                "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName");
                         URL url = new URL(path);
                         HttpURLConnection conn = (HttpURLConnection) url
                                 .openConnection();
@@ -349,11 +383,21 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
 
                         int code = conn.getResponseCode();
                         if (code == 200) {
+                            sqlDatabase.execSQL(String.format("update wx_user set status = 0,returnName='%s',returnPhone='%s',returnTime=datetime('now', 'localtime') where status = 1",mName,mPhone));
+                            MySQLDatabase.getPhoneData(sqlDatabase);
+                            Toast.makeText(getApplicationContext(),getString(R.string.return_phone_successfule),Toast.LENGTH_SHORT).show();
+                            Intent i = new Intent(ReturnActivity.this , com.rao.shoujidaka.rentPhoneActivity.class);
+                            startActivity(i);
 
-                            Log.d("rentPhoneReport", "OK ");
+
+                            Log.d("rentPhoneReport", "body is:"+data);
+
+
+                            Log.d("rentPhoneReport", "手机已经正常归还了");
+
 
                         } else {
-                            Log.d("rentPhoneReport", "error ");
+                            Log.d("rentPhoneReport", "error 手机归还异常，请重新还手机");
 
                         }
                     } catch (Exception e) {
@@ -361,6 +405,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
                         e.printStackTrace();
 
                     }
+                    Looper.loop();
                 }
             }.start();
 
