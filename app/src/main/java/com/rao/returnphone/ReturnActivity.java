@@ -369,7 +369,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
                                 "&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")+
                                 "&phoneType="+URLEncoder.encode(mphoneType, "utf-8")+
                                 "&gameboxVersion="+ commonTools.getItems(getApplicationContext(),"com.huawei.gamebox").get("versionName")+
-                                "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarketp").get("versionName")+
+                                "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarket").get("versionName")+
                                 "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName");
                         URL url = new URL(path);
                         HttpURLConnection conn = (HttpURLConnection) url
@@ -397,6 +397,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
 
 
                         } else {
+                            Toast.makeText(getApplicationContext(),"手机归还登记失败，请优先检查您的网络后再次登记",Toast.LENGTH_SHORT).show();
                             Log.d("rentPhoneReport", "error 手机归还异常，请重新还手机");
 
                         }

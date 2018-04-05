@@ -409,7 +409,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
 
 
-        UserLoginTask(String phone, String name,String deviceId,String phoneType)  {
+        UserLoginTask(String phone, String name, final String deviceId, String phoneType)  {
             mPhone = phone;
             mName = name;
             mdeviceId = deviceId;
@@ -430,6 +430,11 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
                     try {
 
 
+                        if (deviceId.equals("000000000000000")){
+                            Toast.makeText(getApplicationContext(),"系统不愿意支持IMEI号为全零的破手机，请退库，蟹蟹",Toast.LENGTH_SHORT).show();
+                        }
+
+
                         String data = "method=rent"+
                                 "&phone=" + URLEncoder.encode(mPhone, "utf-8") +
                                 "&name=" + URLEncoder.encode(mName, "utf-8")+
@@ -437,7 +442,8 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
                                 "&phoneType="+URLEncoder.encode(mphoneType, "utf-8")+
                                 "&gameboxVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.gamebox").get("versionName")+
                                 "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarket").get("versionName")+
-                                "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName");
+                                "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName")+
+                                "&isRoot="+new commonTools().isDeviceRooted();
                         URL url = new URL(path);
                         HttpURLConnection conn = (HttpURLConnection) url
                                 .openConnection();
@@ -463,6 +469,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
 
                         } else {
+                            Toast.makeText(getApplicationContext(),"手机出借登记失败，请优先检查您的网络后再次登记",Toast.LENGTH_SHORT).show();
                             Log.d("rentPhoneReport", "error ");
 
                         }
