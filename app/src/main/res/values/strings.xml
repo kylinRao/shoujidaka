@@ -21,5 +21,10 @@
     <string name="return_phone">还手机</string>
     <string name="return_phone_successfule">手机归还登记成功，请把手机归还入库</string>
     <string name="rent_phone_successfule">手机正常借出，阁下可以使用了</string>
+    <string name="no_permission_alarm">业务需要，请阁下授予必要权限，不然，本宝宝傲娇起来可是会闪退的哟</string>
+
+
+
     <string name="rent_server_uri">http://lfhigametest.hwcloudtest.cn:38443/rentPhoneReport</string>
+
 </resources>

@@ -7,7 +7,6 @@ import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -16,8 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.ContactsContract;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -35,17 +32,17 @@ import android.widget.Toast;
 
 import com.rao.shoujidaka.MySQLDatabase;
 import com.rao.shoujidaka.R;
+import com.rao.util.HttpMethods;
 import com.rao.util.commonTools;
 
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static android.Manifest.permission.READ_CONTACTS;
+//import static android.Manifest.permission.READ_CONTACTS;
 
 /**
  * A login screen that offers login via email/password.
@@ -55,7 +52,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
     /**
      * Id to identity READ_CONTACTS permission request.
      */
-    private static final int REQUEST_READ_CONTACTS = 0;
+//    private static final int REQUEST_READ_CONTACTS = 0;
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -92,7 +89,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
 
 
 
-        populateAutoComplete();
+//        populateAutoComplete();
 
         mNameView = (EditText) findViewById(R.id.returner_name);
 
@@ -126,48 +123,42 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
         mProgressView = findViewById(R.id.login_progress);
     }
 
-    private void populateAutoComplete() {
-        if (!mayRequestContacts()) {
-            return;
-        }
+//
 
-        getLoaderManager().initLoader(0, null, this);
-    }
-
-    private boolean mayRequestContacts() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return true;
-        }
-        if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            return true;
-        }
-        if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
-            Snackbar.make(mPhoneView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(android.R.string.ok, new View.OnClickListener() {
-                        @Override
-                        @TargetApi(Build.VERSION_CODES.M)
-                        public void onClick(View v) {
-                            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-                        }
-                    });
-        } else {
-            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-        }
-        return false;
-    }
+//    private boolean mayRequestContacts() {
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+//            return true;
+//        }
+//        if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+//            return true;
+//        }
+//        if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
+//            Snackbar.make(mPhoneView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+//                    .setAction(android.R.string.ok, new View.OnClickListener() {
+//                        @Override
+//                        @TargetApi(Build.VERSION_CODES.M)
+//                        public void onClick(View v) {
+//                            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
+//                        }
+//                    });
+//        } else {
+//            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
+//        }
+//        return false;
+//    }
 
     /**
      * Callback received when a permissions request has been completed.
      */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_READ_CONTACTS) {
-            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                populateAutoComplete();
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+//                                           @NonNull int[] grantResults) {
+//        if (requestCode == REQUEST_READ_CONTACTS) {
+//            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                populateAutoComplete();
+//            }
+//        }
+//    }
 
 
     /**
@@ -363,7 +354,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
                 public void run() {
                     Looper.prepare();
                     try {
-                        String data = "method=return"+
+                        String requestData = "method=return"+
                                 "&phone=" + URLEncoder.encode(mPhone, "utf-8") +
                                 "&name=" + URLEncoder.encode(mName, "utf-8")+
                                 "&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")+
@@ -371,15 +362,19 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
                                 "&gameboxVersion="+ commonTools.getItems(getApplicationContext(),"com.huawei.gamebox").get("versionName")+
                                 "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarket").get("versionName")+
                                 "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName");
-                        URL url = new URL(path);
-                        HttpURLConnection conn = (HttpURLConnection) url
-                                .openConnection();
-                        conn.setRequestMethod("POST");
-                        conn.setReadTimeout(5000);
-                        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                        conn.setRequestProperty("Content-Length", String.valueOf(data.length()));
-                        conn.setDoOutput(true);
-                        conn.getOutputStream().write(data.getBytes());
+
+
+                        HttpURLConnection conn = HttpMethods.postMethod(path,requestData);
+
+//                        URL url = new URL(path);
+//                        HttpURLConnection conn = (HttpURLConnection) url
+//                                .openConnection();
+//                        conn.setRequestMethod("POST");
+//                        conn.setReadTimeout(5000);
+//                        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//                        conn.setRequestProperty("Content-Length", String.valueOf(requestData.length()));
+//                        conn.setDoOutput(true);
+//                        conn.getOutputStream().write(requestData.getBytes());
 
                         int code = conn.getResponseCode();
                         if (code == 200) {
@@ -390,7 +385,7 @@ public class ReturnActivity extends AppCompatActivity implements LoaderCallbacks
                             startActivity(i);
 
 
-                            Log.d("rentPhoneReport", "body is:"+data);
+                            Log.d("rentPhoneReport", "body is:"+requestData);
 
 
                             Log.d("rentPhoneReport", "手机已经正常归还了");

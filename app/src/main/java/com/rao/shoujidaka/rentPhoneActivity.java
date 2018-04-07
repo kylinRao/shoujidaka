@@ -1,8 +1,10 @@
 package com.rao.shoujidaka;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -17,7 +19,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -33,25 +35,28 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSON;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.rao.returnphone.ReturnActivity;
+import com.rao.util.HttpMethods;
 import com.rao.util.commonTools;
 
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.Manifest.permission.READ_CONTACTS;
+//import static android.Manifest.permission.READ_CONTACTS;
 
 /**
  * A login screen that offers login via email/password.
  */
-public class rentPhoneActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class rentPhoneActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>,ActivityCompat.OnRequestPermissionsResultCallback  {
+
+
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -74,7 +79,19 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
     private AutoCompleteTextView mPhoneView;
     private EditText mNameView;
     private View mProgressView;
+    private static final int REQUEST_EXTERNAL_STORAGE_AND_STATE = 1;
+    private static String[] PERMISSIONS_STORAGE_AND_STATE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_PHONE_STATE
+    };
+    private static final int REQUEST_INTERNET = 1;
+    private static String[] INTERNET = {
+            Manifest.permission.INTERNET,
+
+    };
     private View mLoginFormView;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -82,12 +99,57 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
     private GoogleApiClient client;
     private MySQLDatabase database ;
     private SQLiteDatabase sqlDatabase ;
+    private void requestReadPhonePermission(Activity activity) {
+        int writePermission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int readPermission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE);
+        int internet = ActivityCompat.checkSelfPermission(activity, Manifest.permission.INTERNET);
+        int phoneState = ActivityCompat.checkSelfPermission(activity, Manifest.permission.READ_PHONE_STATE);
+        if (writePermission != PackageManager.PERMISSION_GRANTED || readPermission != PackageManager.PERMISSION_GRANTED || phoneState != PackageManager.PERMISSION_GRANTED) {
+            //在这里面处理需要权限的代码
+            ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE_AND_STATE, REQUEST_EXTERNAL_STORAGE_AND_STATE);
+
+
+
+        }
+        if(internet != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, INTERNET, REQUEST_INTERNET);
+        }
+
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        super.onRequestPermissionsResult(requestCode, permissions,grantResults);
+
+        switch (requestCode){
+            case REQUEST_EXTERNAL_STORAGE_AND_STATE:
+                if (grantResults[0] == 0){
+                    commonTools.initApk(getApplicationContext());
+                }else {
+                    Toast.makeText(getApplicationContext(),"业务需要，请阁下授予必要权限，不然，本宝宝傲娇起来可是会闪退的哟",Toast.LENGTH_LONG).show();
+                }
+                break;
+            default:
+                break;
+
+        }
+    }
+
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-//        初始化apk
+
+        //        初始化apk
         commonTools.initApk(getApplicationContext());
+        requestReadPhonePermission(this);
+
+
+        super.onCreate(savedInstanceState);
+
+
         //实例化刚才上面我们创建的那个类
 
 /*在通过getReadableDatabase()方法
@@ -108,9 +170,14 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
 
 
         setContentView(R.layout.activity_rent_phone);
+
+
+
+
+
         // Set up the login form.
         mPhoneView = (AutoCompleteTextView) findViewById(R.id.renter_phone);
-        populateAutoComplete();
+//        populateAutoComplete();
 
         mNameView = (EditText) findViewById(R.id.renter_name);
         mNameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -143,49 +210,10 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-    }
 
-    private void populateAutoComplete() {
-        if (!mayRequestContacts()) {
-            return;
-        }
 
-        getLoaderManager().initLoader(0, null, this);
-    }
 
-    private boolean mayRequestContacts() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return true;
-        }
-        if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            return true;
-        }
-        if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
-            Snackbar.make(mPhoneView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(android.R.string.ok, new OnClickListener() {
-                        @Override
-                        @TargetApi(Build.VERSION_CODES.M)
-                        public void onClick(View v) {
-                            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-                        }
-                    });
-        } else {
-            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-        }
-        return false;
-    }
 
-    /**
-     * Callback received when a permissions request has been completed.
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_READ_CONTACTS) {
-            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                populateAutoComplete();
-            }
-        }
     }
 
 
@@ -435,7 +463,7 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
                         }
 
 
-                        String data = "method=rent"+
+                        String requestData = "method=rent"+
                                 "&phone=" + URLEncoder.encode(mPhone, "utf-8") +
                                 "&name=" + URLEncoder.encode(mName, "utf-8")+
                                 "&deviceId=" +URLEncoder.encode(mdeviceId, "utf-8")+
@@ -444,26 +472,35 @@ public class rentPhoneActivity extends AppCompatActivity implements LoaderCallba
                                 "&hiappVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.appmarket").get("versionName")+
                                 "&hmsVersion="+commonTools.getItems(getApplicationContext(),"com.huawei.hwid").get("versionName")+
                                 "&isRoot="+new commonTools().isDeviceRooted();
-                        URL url = new URL(path);
-                        HttpURLConnection conn = (HttpURLConnection) url
-                                .openConnection();
-                        conn.setRequestMethod("POST");
-                        conn.setReadTimeout(5000);
-                        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                        conn.setRequestProperty("Content-Length", String.valueOf(data.length()));
-                        conn.setDoOutput(true);
-                        conn.getOutputStream().write(data.getBytes());
+
+
+                        HttpURLConnection conn = HttpMethods.postMethod(path,requestData);
+//                        URL url = new URL(path);
+//                        HttpURLConnection conn = (HttpURLConnection) url
+//                                .openConnection();
+//                        conn.setRequestMethod("POST");
+//                        conn.setReadTimeout(5000);
+//                        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//                        conn.setRequestProperty("Content-Length", String.valueOf(data.length()));
+//                        conn.setDoOutput(true);
+//                        conn.getOutputStream().write(data.getBytes());
 
                         int code = conn.getResponseCode();
                         if (code == 200) {
 //                            页面跳转和数据库加载都依赖服务器返回正常
+
+                            String responseJson= JSON.toJSONString(conn.getResponseMessage());
+                            Log.d("Http response","repsponseMessage is:"+responseJson);
+
+
+
                             sqlDatabase.execSQL(String.format("insert into wx_user (rentPhone,rentName,status) values ('%s','%s',%s)",mPhone,mName,1));
                             MySQLDatabase.getPhoneData(sqlDatabase);
                             Toast.makeText(getApplicationContext(),getString(R.string.rent_phone_successfule),Toast.LENGTH_SHORT).show();
 
                             Intent i = new Intent(rentPhoneActivity.this , ReturnActivity.class);
                             startActivity(i);
-                            Log.d("rentPhoneReport", "body is:"+data);
+                            Log.d("rentPhoneReport", "body is:"+requestData);
 
                             Log.d("rentPhoneReport", "手机已经成功借出");
 
